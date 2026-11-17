@@ -80,6 +80,16 @@ sudo -u prtg env -i /bin/bash --noprofile --norc -c '/opt/paessler/share/scripts
 
 Die Ausgabe ist JSON mit `"version": 3`, Status, Meldung und der Kanalliste. Kommt stattdessen eine Fehlermeldung oder nichts, liegt es am Pfad, an den Rechten oder (bei Docker) an der sudo-Regel. Bei `docker_container_v2.sh` hängen Sie den Containernamen an.
 
+## Sicherheit
+
+Die Skripte lesen nur, aber die sudo-Regel für Docker hat eine Folge, die Sie kennen sollten:
+
+- Sie erlaubt dem Benutzer `prtg` `docker ps`, `images`, `system df`, `stats` und `inspect` jeweils mit beliebigen Zusätzen. Damit lässt sich kein Container starten und kein Zugriff auf das Dateisystem erlangen.
+- **`docker inspect` zeigt auch die Umgebungsvariablen eines Containers.** Dort stehen oft Kennwörter und Schlüssel. Wer den privaten SSH-Schlüssel des Benutzers `prtg` besitzt, kann sie lesen.
+- Schützen Sie den Schlüssel deshalb wie ein Kennwort: nur in den Zugangsdaten in PRTG ablegen, nicht weitergeben, nicht auf mehreren Rechnern verteilen. Prüfen Sie, ob auf dem Host Container mit sensiblen Umgebungsvariablen laufen, bevor Sie die Docker-Regel einrichten.
+- Der Benutzer `prtg` gehört **nicht** in die Gruppe `docker`. Das wäre faktisch Root-Zugriff.
+- Wer die Regel enger fassen möchte, kann statt der Platzhalter ein Hilfsskript unter Root-Rechten einsetzen, das den Containernamen prüft und nur die nötigen Felder ausgibt, und die sudo-Regel auf dieses Skript beschränken.
+
 ## Grenzen
 
 - Die Docker-Skripte rufen `sudo -n /usr/bin/docker` auf. Liegt Docker woanders, passen Sie den Pfad am Anfang der Skripte und in der sudo-Regel an.
